@@ -25,7 +25,7 @@ GO_EXE_PATH := $(shell "$(GO)" env GOROOT)/bin
 # Check if this GO tools version used is at least the version of go specified in
 # the go.mod file. The version in go.mod should be in sync with other repos.
 GO_VERSION := $(shell "$(GO)" version | awk '{print substr($$3, 3, 4)}')
-MOD_VERSION := $(shell cat .go_version) 
+MOD_VERSION := $(shell cat .go_version)
 
 GM := $(word 1,$(subst ., ,$(GO_VERSION)))
 MM := $(word 1,$(subst ., ,$(MOD_VERSION)))
@@ -63,7 +63,7 @@ export PATH := $(BASE_DIR)/$(TOOLS_DIR):$(GO_EXE_PATH):$(PATH)
 
 # Default values for dev cluster
 ifeq ($(K8S_VERSION),)
-K8S_VERSION := v1.29.1
+K8S_VERSION := v1.29.4
 endif
 ifeq ($(CLUSTER_NAME),)
 CLUSTER_NAME := yk8s
@@ -71,7 +71,7 @@ endif
 ifeq ($(PLUGIN),1)
   PLUGIN_OPTS := --plugin
 else
-  PLUGIN_OPTS := 
+  PLUGIN_OPTS :=
 endif
 
 # Build date - Use git commit, then cached build.date, finally current date
@@ -256,7 +256,7 @@ $(SPARK_SUBMIT_CMD):
 	@rm -rf "$(SPARK_HOME)" "$(SPARK_HOME).tmp"
 	@mkdir -p "$(SPARK_HOME).tmp"
 	@curl -sSfL "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz" \
-		| tar -x -z --strip-components=1 -C "$(SPARK_HOME).tmp" 
+		| tar -x -z --strip-components=1 -C "$(SPARK_HOME).tmp"
 	@mv -f "$(SPARK_HOME).tmp" "$(SPARK_HOME)"
 
 # Install go-licenses
@@ -387,7 +387,14 @@ $(DEV_BIN_DIR)/$(PLUGIN_BINARY): go.mod go.sum $(shell find pkg)
 
 # Build scheduler binary in a production ready version
 .PHONY: scheduler
-scheduler: $(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY)
+#scheduler: $(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY)
+scheduler: init
+	@echo "building binary for scheduler docker image"
+	CGO_ENABLED=0 GOOS=linux GOARCH="${EXEC_ARCH}" \
+	go build -gcflags="-N -l" -a -o=${RELEASE_BIN_DIR}/${BINARY} -ldflags \
+	'-extldflags "-static" -X main.version=${VERSION} -X main.date=${DATE} -X main.goVersion=${GO_VERSION} -X main.arch=${EXEC_ARCH} -X main.coreSHA=${CORE_SHA} -X main.siSHA=${SI_SHA} -X main.shimSHA=${SHIM_SHA}' \
+	-tags netgo -installsuffix netgo \
+	./pkg/cmd/shim/
 
 $(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY): go.mod go.sum $(shell find pkg)
 	@echo "building binary for scheduler docker image"
@@ -416,7 +423,7 @@ $(RELEASE_BIN_DIR)/$(PLUGIN_BINARY): go.mod go.sum $(shell find pkg)
 	-tags netgo \
 	-installsuffix netgo \
 	./pkg/cmd/schedulerplugin/
-	
+
 # Build a scheduler image based on the production ready version
 .PHONY: sched_image
 sched_image: $(OUTPUT)/third-party-licenses.md scheduler docker/scheduler
