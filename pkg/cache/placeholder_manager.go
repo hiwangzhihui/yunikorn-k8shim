@@ -92,10 +92,12 @@ func (mgr *PlaceholderManager) createAppPlaceholders(app *Application) error {
 					zap.String("name", placeholderName))
 				continue
 			}
+			//之前
 			placeholder := newPlaceholder(placeholderName, app, tg)
-			// create the placeholder on K8s
+			// create the placeholder on K8s  创建一个预占的 Pod
 			_, err := mgr.clients.KubeClient.Create(placeholder.pod)
 			if err != nil {
+				//之后 ，新增打印当前 NS  资源使用量，包含 Pod 列表和 Pod 站用资源情况
 				log.Logger().Error("failed to create placeholder pod",
 					zap.Error(err))
 				return err

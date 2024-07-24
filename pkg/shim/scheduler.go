@@ -291,23 +291,28 @@ func (ss *KubernetesShim) Run() {
 	// run dispatcher
 	// the dispatcher handles the basic event dispatching,
 	// it needs to be started at first
+	//事件转发器优先启动
 	dispatcher.Start()
 
 	// run the placeholder manager
+	//资源预占管理器
 	ss.phManager.Start()
 
 	// run the client library code that communicates with Kubernetes
+	//ai 工厂类服务
 	ss.apiFactory.Start()
 
 	// register scheduler with scheduler core
 	// this triggers the scheduler state transition
 	// it first registers with the core, then start to do recovery,
 	// after the recovery is succeed, it goes to the normal scheduling routine
+	//启动核心事件
 	dispatcher.Dispatch(newRegisterSchedulerEvent())
 
 	// run app managers
 	// the app manager launches the pod event handlers
 	// it needs to be started after the shim is registered with the core
+	//启动 appManager
 	if err := ss.appManager.Start(); err != nil {
 		log.Logger().Fatal("failed to start app manager", zap.Error(err))
 		ss.Stop()

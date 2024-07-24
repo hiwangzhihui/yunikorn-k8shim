@@ -50,15 +50,17 @@ import (
 
 // context maintains scheduling state, like apps and apps' tasks.
 type Context struct {
-	applications   map[string]*Application        // apps
-	nodes          *schedulerNodes                // nodes
+	applications map[string]*Application // apps
+	nodes        *schedulerNodes         // nodes
+
 	schedulerCache *schedulercache.SchedulerCache // external cache
 	apiProvider    client.APIProvider             // apis to interact with api-server, scheduler-core, etc
-	predManager    predicates.PredicateManager    // K8s predicates
-	pluginMode     bool                           // true if we are configured as a scheduler plugin
-	namespace      string                         // yunikorn namespace
-	configMaps     []*v1.ConfigMap                // cached yunikorn configmaps
-	lock           *sync.RWMutex                  // lock
+	//k8s 预选接口
+	predManager predicates.PredicateManager // K8s predicates
+	pluginMode  bool                        // true if we are configured as a scheduler plugin
+	namespace   string                      // yunikorn namespace
+	configMaps  []*v1.ConfigMap             // cached yunikorn configmaps
+	lock        *sync.RWMutex               // lock
 }
 
 // NewContext create a new context for the scheduler using a default (empty) configuration
