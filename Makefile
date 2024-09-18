@@ -243,7 +243,7 @@ build_plugin: init
 scheduler: init
 	@echo "building binary for scheduler docker image"
 	CGO_ENABLED=0 GOOS=linux GOARCH="${EXEC_ARCH}" \
-	go build -a -o=${RELEASE_BIN_DIR}/${BINARY} -ldflags \
+	go build -gcflags="-N -l" -a -o=${RELEASE_BIN_DIR}/${BINARY} -ldflags \
 	'-extldflags "-static" -X main.version=${VERSION} -X main.date=${DATE} -X main.goVersion=${GO_VERSION} -X main.arch=${EXEC_ARCH} -X main.coreSHA=${CORE_SHA} -X main.siSHA=${SI_SHA} -X main.shimSHA=${SHIM_SHA}' \
 	-tags netgo -installsuffix netgo \
 	./pkg/cmd/shim/

@@ -181,16 +181,19 @@ func UpdateConfigMaps(configMaps []*v1.ConfigMap, initial bool) error {
 	}
 
 	// update scheduler config with merged version
+	//更新调度配置
 	SetSchedulerConf(newConf)
 	conf := GetSchedulerConf()
 
-	// update logger configuration
+	// update logger configuration，更新日志级别配置
 	log.GetZapConfigs().Level.SetLevel(zapcore.Level(conf.LoggingLevel))
 
 	// update Kubernetes logger configuration
+	//更新 klog 日志级别
 	updateKubeLogger(conf)
 
 	// dump new scheduler configuration
+	//打印日志配置详细信息
 	DumpConfiguration()
 
 	return nil

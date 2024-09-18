@@ -56,18 +56,20 @@ func main() {
 	conf.ShimSHA = shimSHA
 
 	log.Logger().Info(fmt.Sprintf("Build info: version=%s date=%s isPluginVersion=%t goVersion=%s arch=%s coreSHA=%s siSHA=%s shimSHA=%s", version, date, false, goVersion, arch, coreSHA, siSHA, shimSHA))
-
+	//从指定的 ns 下加载 ConfigMap 配置
 	configMaps, err := client.LoadBootstrapConfigMaps(conf.GetSchedulerNamespace())
 	if err != nil {
 		log.Logger().Fatal("Unable to bootstrap configuration", zap.Error(err))
 	}
 
+	//加载最新的配置文件
 	err = conf.UpdateConfigMaps(configMaps, true)
 	if err != nil {
 		log.Logger().Fatal("Unable to load initial configmaps", zap.Error(err))
 	}
 
 	log.Logger().Info("Starting scheduler", zap.String("name", constants.SchedulerName))
+	//启动各项服务
 	serviceContext := entrypoint.StartAllServicesWithLogger(log.Logger(), log.GetZapConfigs())
 
 	if sa, ok := serviceContext.RMProxy.(api.SchedulerAPI); ok {

@@ -14,7 +14,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-FROM --platform=$TARGETPLATFORM scratch
+FROM centos:latest
 COPY --chown=0:0 k8s_yunikorn_scheduler /
-USER 4444:4444
+USER root:root
+COPY --chown=0:0 dlv /
 ENTRYPOINT [ "/k8s_yunikorn_scheduler" ]
