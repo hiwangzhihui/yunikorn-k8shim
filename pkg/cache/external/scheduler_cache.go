@@ -357,7 +357,6 @@ func (cache *SchedulerCache) UpdatePod(newPod *v1.Pod) {
 
 func (cache *SchedulerCache) updatePod(pod *v1.Pod) {
 	key := string(pod.UID)
-
 	currState, ok := cache.podsMap[key]
 	if ok {
 		// remove current version of pod

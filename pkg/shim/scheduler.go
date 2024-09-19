@@ -68,11 +68,17 @@ func NewShimScheduler(scheduler api.SchedulerAPI, configs *conf.SchedulerConf, b
 
 	// we have disabled re-sync to keep ourselves up-to-date
 	informerFactory := informers.NewSharedInformerFactory(kubeClient.GetClientSet(), 0)
-
+	//构建 apiFactory 初始化各类 Informer
 	apiFactory := client.NewAPIFactory(scheduler, informerFactory, configs, false)
+	//初始化上下文
 	context := cache.NewContextWithBootstrapConfigMaps(apiFactory, bootstrapConfigMaps)
+
 	rmCallback := callback.NewAsyncRMCallback(context)
+
+	//初始化 appManager 服务
 	appManager := appmgmt.NewAMService(context, apiFactory)
+
+	//构成 ShimScheduler 上下文，并注册事件转发
 	return newShimSchedulerInternal(context, apiFactory, appManager, rmCallback)
 }
 
@@ -299,7 +305,7 @@ func (ss *KubernetesShim) Run() {
 	ss.phManager.Start()
 
 	// run the client library code that communicates with Kubernetes
-	//ai 工厂类服务
+	//informer 事件监听驱动器
 	ss.apiFactory.Start()
 
 	// register scheduler with scheduler core

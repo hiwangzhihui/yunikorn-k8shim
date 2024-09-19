@@ -38,6 +38,10 @@ import (
 	"github.com/apache/yunikorn-scheduler-interface/lib/go/api"
 )
 
+/**
+* 基于 k8s informer 机制的核心，监听处理 Pod、Node、ConfigMap 、Stroage、PV、Pvc、Application、PriorityClass 事件
+* 作为调度器事件驱动的入口
+ */
 type Type int
 
 var informerTypes = [...]string{"Pod", "Node", "ConfigMap", "Storage", "PV", "PVC", "Application", "PriorityClass"}
@@ -68,6 +72,9 @@ type APIProvider interface {
 
 // resource handlers defines add/update/delete operations in response to the corresponding resources updates.
 // The associated the type field points the handler functions to the correct receiver.
+/**
+* 自定义资源 Handler 接口
+ */
 type ResourceEventHandlers struct {
 	Type
 	FilterFn func(obj interface{}) bool
@@ -85,6 +92,7 @@ type APIFactory struct {
 	lock     *sync.RWMutex
 }
 
+// APIFactory 构建入口
 func NewAPIFactory(scheduler api.SchedulerAPI, informerFactory informers.SharedInformerFactory, configs *conf.SchedulerConf, testMode bool) *APIFactory {
 	kubeClient := NewKubeClient(configs.KubeConfig)
 
@@ -186,6 +194,7 @@ func (s *APIFactory) AddEventHandler(handlers *ResourceEventHandlers) {
 	s.addEventHandlers(handlers.Type, h, 0)
 }
 
+// 根据事件类型注册不同 Resource 的 Handler
 func (s *APIFactory) addEventHandlers(
 	handlerType Type, handler cache.ResourceEventHandler, resyncPeriod time.Duration) {
 	switch handlerType {

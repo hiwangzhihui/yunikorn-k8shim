@@ -7,3 +7,6 @@ shellcheck
 *.csr
 *.crt
 *.key
+/build/bin/*
+/build/docker/admission/*
+/build/*

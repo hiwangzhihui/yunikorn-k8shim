@@ -69,11 +69,13 @@ func main() {
 	}
 
 	log.Logger().Info("Starting scheduler", zap.String("name", constants.SchedulerName))
-	//启动各项服务
+	//启动各项内置服务
 	serviceContext := entrypoint.StartAllServicesWithLogger(log.Logger(), log.GetZapConfigs())
 
 	if sa, ok := serviceContext.RMProxy.(api.SchedulerAPI); ok {
+		//构建 K8sShimScheduler
 		ss := shim.NewShimScheduler(sa, conf.GetSchedulerConf(), configMaps)
+		//启动
 		ss.Run()
 
 		signalChan := make(chan os.Signal, 1)

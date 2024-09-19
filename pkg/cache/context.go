@@ -59,8 +59,9 @@ type Context struct {
 	predManager predicates.PredicateManager // K8s predicates
 	pluginMode  bool                        // true if we are configured as a scheduler plugin
 	namespace   string                      // yunikorn namespace
-	configMaps  []*v1.ConfigMap             // cached yunikorn configmaps
-	lock        *sync.RWMutex               // lock
+	//yunikorn 所有配置，存放在一个数组中
+	configMaps []*v1.ConfigMap // cached yunikorn configmaps
+	lock       *sync.RWMutex   // lock
 }
 
 // NewContext create a new context for the scheduler using a default (empty) configuration
