@@ -147,6 +147,7 @@ func (ss *KubernetesShim) registerShimLayer() error {
 		zap.String("policyGroup", configuration.PolicyGroup),
 		zap.Any("buildInfo", buildInfoMap))
 	if _, err := ss.apiFactory.GetAPIs().SchedulerAPI.
+		//注册调研 Core 内部的时间处理结果回调函数 AsyncRMCallback
 		RegisterResourceManager(&registerMessage, ss.callback); err != nil {
 		return err
 	}

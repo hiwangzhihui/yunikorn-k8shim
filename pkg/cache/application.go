@@ -416,7 +416,7 @@ func (app *Application) handleSubmitApplicationEvent() error {
 	log.Log(log.ShimCacheApplication).Info("handle app submission",
 		zap.Stringer("app", app),
 		zap.String("clusterID", conf.GetSchedulerConf().ClusterID))
-
+	//向 Core 核心发送请求
 	if err := app.schedulerAPI.UpdateApplication(
 		&si.ApplicationRequest{
 			New: []*si.AddApplicationRequest{
