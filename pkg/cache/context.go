@@ -50,6 +50,7 @@ import (
 
 // context maintains scheduling state, like apps and apps' tasks.
 type Context struct {
+	//app 列表
 	applications map[string]*Application // apps
 	nodes        *schedulerNodes         // nodes
 

@@ -353,6 +353,7 @@ func (app *Application) TriggerAppRecovery() error {
 // ensure non of these calls is expensive, usually, they
 // do nothing more than just triggering the state transition.
 // return true if the app needs scheduling or false if not
+// App 内部事件调度驱动器
 func (app *Application) Schedule() bool {
 	switch app.GetApplicationState() {
 	case ApplicationStates().New:
@@ -424,6 +425,7 @@ func (app *Application) handleSubmitApplicationEvent() {
 	log.Logger().Info("handle app submission",
 		zap.Stringer("app", app),
 		zap.String("clusterID", conf.GetSchedulerConf().ClusterID))
+	//任务提交之后，将 App 转换到下一个状态
 	err := app.schedulerAPI.UpdateApplication(
 		&si.ApplicationRequest{
 			New: []*si.AddApplicationRequest{

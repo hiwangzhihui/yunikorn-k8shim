@@ -32,9 +32,9 @@ import (
 
 var applicationStatesOnce sync.Once
 
-//----------------------------------------------
+// ----------------------------------------------
 // Application events
-//----------------------------------------------
+// ----------------------------------------------
 type ApplicationEventType int
 
 const (
@@ -502,6 +502,7 @@ func newAppState() *fsm.FSM { //nolint:funlen
 				Dst:  states.Killed,
 			},
 		},
+		//各种回调函数将 APP 转换到下一个状态
 		fsm.Callbacks{
 			events.EnterState: func(_ context.Context, event *fsm.Event) {
 				app := event.Args[0].(*Application) //nolint:errcheck

@@ -209,6 +209,7 @@ func (ss *KubernetesShim) doScheduling() {
 	ss.context.AddSchedulingEventHandlers()
 
 	// run main scheduling loop
+	//独立的线程定时调度，轮询 App 调度
 	go wait.Until(ss.schedule, conf.GetSchedulerConf().GetSchedulingInterval(), ss.stopChan)
 	// log a message if no outstanding requests were found for a while
 	go wait.Until(ss.checkOutstandingApps, outstandingAppLogTimeout, ss.stopChan)
