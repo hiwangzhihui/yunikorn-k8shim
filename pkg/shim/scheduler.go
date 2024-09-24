@@ -58,6 +58,9 @@ var (
 	outstandingAppLogTimeout = 2 * time.Minute
 )
 
+/**
+* scheduler 是与底层 Core 交互的接口，就是 RMProxy 实现
+ */
 func NewShimScheduler(scheduler api.SchedulerAPI, configs *conf.SchedulerConf, bootstrapConfigMaps []*v1.ConfigMap) *KubernetesShim {
 	kubeClient := client.NewKubeClient(configs.KubeConfig)
 
@@ -89,7 +92,7 @@ func newShimSchedulerInternal(ctx *cache.Context, apiFactory client.APIProvider,
 		lock:                 &locking.RWMutex{},
 		outstandingAppsFound: false,
 	}
-	// init dispatcher
+	// init dispatcher 初始化事件转发器，没有 NoderHandler ?
 	dispatcher.RegisterEventHandler(AppHandler, dispatcher.EventTypeApp, ctx.ApplicationEventHandler())
 	dispatcher.RegisterEventHandler(TaskHandler, dispatcher.EventTypeTask, ctx.TaskEventHandler())
 
@@ -132,6 +135,7 @@ func (ss *KubernetesShim) registerShimLayer() error {
 	config := utils.GetCoreSchedulerConfigFromConfigMap(confMap)
 	extraConfig := utils.GetExtraConfigFromConfigMap(confMap)
 
+	//RmID 集群名称
 	registerMessage := si.RegisterResourceManagerRequest{
 		RmID:        configuration.ClusterID,
 		Version:     configuration.ClusterVersion,

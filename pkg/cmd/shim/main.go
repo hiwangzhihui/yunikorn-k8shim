@@ -48,6 +48,8 @@ func main() {
 	}
 
 	log.Log(log.Shim).Info("Starting scheduler", zap.String("name", constants.SchedulerName))
+
+	//serviceContext 与 core 交互的入口 api
 	serviceContext := entrypoint.StartAllServicesWithLogger(log.RootLogger(), log.GetZapConfigs())
 
 	if serviceContext.RMProxy != nil {

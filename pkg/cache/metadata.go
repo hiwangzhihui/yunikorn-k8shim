@@ -49,7 +49,7 @@ func getTaskMetadata(pod *v1.Pod) (TaskMetadata, bool) {
 	if !conf.GetSchedulerConf().DisableGangScheduling {
 		taskGroupName = utils.GetTaskGroupFromPodSpec(pod)
 	}
-
+	//TaskId 为 Pod UUId
 	return TaskMetadata{
 		ApplicationID: appID,
 		TaskID:        string(pod.UID),

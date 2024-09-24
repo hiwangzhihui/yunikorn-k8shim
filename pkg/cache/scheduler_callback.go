@@ -47,7 +47,7 @@ func (callback *AsyncRMCallback) UpdateAllocation(response *si.AllocationRespons
 	log.Log(log.ShimRMCallback).Debug("UpdateAllocation callback received",
 		zap.Stringer("UpdateAllocationResponse", response))
 	// handle new allocations
-	for _, alloc := range response.New {
+	for _, alloc := range response.New { //遍历新申请到的资源
 		// got allocation for pod, bind pod to the scheduled node
 		log.Log(log.ShimRMCallback).Debug("callback: response to new allocation",
 			zap.String("allocationKey", alloc.AllocationKey),
@@ -61,8 +61,8 @@ func (callback *AsyncRMCallback) UpdateAllocation(response *si.AllocationRespons
 			continue
 		}
 
-		task.setAllocationKey(alloc.AllocationKey)
-
+		task.setAllocationKey(alloc.AllocationKey) //更新申请到的 key
+		//todo
 		if err := callback.context.AssumePod(alloc.AllocationKey, alloc.NodeID); err != nil {
 			task.FailWithEvent(err.Error(), "AssumePodError")
 			return err
@@ -72,6 +72,7 @@ func (callback *AsyncRMCallback) UpdateAllocation(response *si.AllocationRespons
 			// task is already bound, fixup state and continue
 			task.MarkPreviouslyAllocated(alloc.AllocationKey, alloc.NodeID)
 		} else {
+			//进入到 TaskAllocated 状态
 			ev := NewAllocateTaskEvent(alloc.ApplicationID, task.taskID, alloc.AllocationKey, alloc.NodeID)
 			dispatcher.Dispatch(ev)
 		}
@@ -116,6 +117,7 @@ func (callback *AsyncRMCallback) UpdateApplication(response *si.ApplicationRespo
 
 		if app := callback.context.GetApplication(app.ApplicationID); app != nil {
 			log.Log(log.ShimRMCallback).Info("Accepting app", zap.String("appID", app.GetApplicationID()))
+			//触发上层的  ApplicationEventType 事件
 			ev := NewSimpleApplicationEvent(app.GetApplicationID(), AcceptApplication)
 			dispatcher.Dispatch(ev)
 		}

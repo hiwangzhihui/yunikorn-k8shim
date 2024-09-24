@@ -44,9 +44,9 @@ const (
 	UpdateReservation
 	RunApplication
 	RejectApplication
-	CompleteApplication
+	CompleteApplication //todo 没用到
 	FailApplication
-	KillApplication
+	KillApplication //没有用到 TODO 没有Kill 的入口
 	KilledApplication
 	ReleaseAppAllocation
 	ResumingApplication
@@ -465,6 +465,7 @@ func newAppState() *fsm.FSM { //nolint:funlen
 			},
 			SubmitApplication.String(): func(_ context.Context, event *fsm.Event) {
 				app := event.Args[0].(*Application) //nolint:errcheck
+				//提交任务并进入core 内核调度
 				event.Err = app.handleSubmitApplicationEvent()
 			},
 			RejectApplication.String(): func(_ context.Context, event *fsm.Event) {

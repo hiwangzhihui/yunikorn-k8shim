@@ -83,11 +83,12 @@ func Convert2PriorityClass(obj interface{}) *schedulingv1.PriorityClass {
 }
 
 // PodAlreadyBound returns true if a newly initializing Pod is already assigned to a Node
+// 返回 true 表示已经成功分配给了一个节点
 func PodAlreadyBound(pod *v1.Pod) bool {
 	// pod already bound needs to satisfy conditions:
-	// 1. Pod is scheduled by us
-	// 2. pod is already assigned to a node
-	// 3. pod is not in terminated state
+	// 1. Pod is scheduled by us 首先 Pod 是属于当前任务的
+	// 2. pod is already assigned to a node 其次 Pod 已明确分配给了某个节点
+	// 3. pod is not in terminated state  Pod 还没结束
 	if GetApplicationIDFromPod(pod) != "" && IsAssignedPod(pod) && !IsPodTerminated(pod) {
 		return true
 	}

@@ -21,7 +21,7 @@ package events
 const EnterState = "enter_state"
 
 // ----------------------------------------------
-// General event interface
+// General event interface  各种事件接口
 // ----------------------------------------------
 type SchedulingEvent interface {
 	GetArgs() []interface{}

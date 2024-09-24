@@ -147,7 +147,7 @@ func (ctx *Context) AddSchedulingEventHandlers() error {
 	err = ctx.apiProvider.AddEventHandler(&client.ResourceEventHandlers{
 		Type:     client.PodInformerHandlers,
 		AddFn:    ctx.AddPod,
-		UpdateFn: ctx.UpdatePod,
+		UpdateFn: ctx.UpdatePod, // Pod 资源监听
 		DeleteFn: ctx.DeletePod,
 	})
 	if err != nil {
@@ -290,6 +290,7 @@ func (ctx *Context) UpdatePod(_, newObj interface{}) {
 	if applicationID == "" {
 		ctx.updateForeignPod(pod)
 	} else {
+		//将 Pod 转换为 Task
 		ctx.updateYuniKornPod(applicationID, pod)
 	}
 }
@@ -313,6 +314,7 @@ func (ctx *Context) updateYuniKornPod(appID string, pod *v1.Pod) {
 
 	if ctx.schedulerCache.UpdatePod(pod) {
 		// pod was accepted; ensure the application and task objects have been created
+		//将 Pod 添加到 App Task 列表中
 		ctx.ensureAppAndTaskCreated(pod, app)
 	}
 }
@@ -342,7 +344,7 @@ func (ctx *Context) ensureAppAndTaskCreated(pod *v1.Pod, app *Application) {
 		return
 	}
 
-	// add task if it doesn't already exist
+	// add task if it doesn't already exist  添加到 AppTask 列表中
 	if task := app.GetTask(string(pod.UID)); task == nil {
 		ctx.addTask(&AddTaskRequest{
 			Metadata: taskMeta,
@@ -869,6 +871,10 @@ func (ctx *Context) StartPodAllocation(podKey string, nodeID string) bool {
 	return ctx.schedulerCache.StartPodAllocation(podKey, nodeID)
 }
 
+/**
+* pod 被删除或终止的时候，会触发 CompleteTask 事件，
+* 会更新或移除 Shim 和 Core 中相关的 RequestResource\AllocateResource\Task 状态信息
+ */
 func (ctx *Context) notifyTaskComplete(app *Application, taskID string) {
 	if app == nil {
 		log.Log(log.ShimContext).Debug("In notifyTaskComplete but app is nil",
@@ -1050,6 +1056,7 @@ func (ctx *Context) addTask(request *AddTaskRequest) *Task {
 					}
 				}
 			}
+			//添加资源申请 Task 核心入口
 			task := NewFromTaskMeta(request.Metadata.TaskID, app, ctx, request.Metadata, originator)
 			app.addTask(task)
 			log.Log(log.ShimContext).Info("task added",
@@ -1232,6 +1239,7 @@ func (ctx *Context) ApplicationEventHandler() func(obj interface{}) {
 			}
 
 			if app.canHandle(event) {
+				//最终交给 app 处理
 				if err := app.handle(event); err != nil {
 					log.Log(log.ShimContext).Error("failed to handle application event",
 						zap.String("event", event.GetEvent()),

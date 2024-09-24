@@ -290,8 +290,9 @@ func (task *Task) handleSubmitTaskEvent() {
 		zap.String("podName", task.pod.Name))
 
 	// send update allocation event to core
-	task.updateAllocation()
+	task.updateAllocation() //向 Core 发送 allocation 事件
 
+	//打印事件记录  todo ，待验证
 	if !utils.PodAlreadyBound(task.pod) {
 		// if this is a new request, add events to pod
 		events.GetRecorder().Eventf(task.pod.DeepCopy(), nil, v1.EventTypeNormal, "Scheduling", "Scheduling",
@@ -327,6 +328,7 @@ func (task *Task) updateAllocation() {
 		task.originator,
 		preemptionPolicy)
 	log.Log(log.ShimCacheTask).Debug("send update request", zap.Stringer("request", rr))
+	//将 AllocationRequest 资源请求，发送给 Core
 	if err := task.context.apiProvider.GetAPIs().SchedulerAPI.UpdateAllocation(rr); err != nil {
 		log.Log(log.ShimCacheTask).Debug("failed to send allocation to scheduler", zap.Error(err))
 		return
@@ -384,6 +386,7 @@ func (task *Task) postTaskAllocated() {
 				zap.String("podName", task.pod.Name),
 				zap.String("podUID", string(task.pod.UID)))
 
+			//调度 K8s 底层进行资源绑定，启动 Pod
 			if err := task.context.apiProvider.GetAPIs().KubeClient.Bind(task.pod, task.nodeName); err != nil {
 				log.Log(log.ShimCacheTask).Error("bind pod to node failed", zap.String("taskID", task.taskID), zap.Error(err))
 				task.failWithEvent(fmt.Sprintf("bind pod to node failed, name: %s, %s", task.alias, err.Error()), "PodBindFailure")
@@ -542,10 +545,11 @@ func (task *Task) releaseAllocation() {
 // some sanity checks before sending task for scheduling,
 // this reduces the scheduling overhead by blocking such
 // request away from the core scheduler.
+// 进行调度前的一些检查
 func (task *Task) sanityCheckBeforeScheduling() error {
 	// After version 1.7.0, we should reject the task whose pod is unbound and has conflicting metadata.
-	if !utils.PodAlreadyBound(task.pod) {
-		if err := utils.CheckAppIdInPod(task.pod); err != nil {
+	if !utils.PodAlreadyBound(task.pod) { //先确认 Pod 还未被分配资源
+		if err := utils.CheckAppIdInPod(task.pod); err != nil { //再检查 Pod 上的 Label 标签元数据
 			log.Log(log.ShimCacheTask).Warn("Pod has inconsistent application metadata and may be rejected in a future YuniKorn release",
 				zap.String("appID", task.applicationID),
 				zap.String("podName", task.pod.Name),
@@ -554,7 +558,7 @@ func (task *Task) sanityCheckBeforeScheduling() error {
 			events.GetRecorder().Eventf(task.pod.DeepCopy(),
 				nil, v1.EventTypeWarning, "Scheduling", "Scheduling", fmt.Sprintf("Pod has inconsistent application metadata and may be rejected in a future YuniKorn release: %s", err.Error()))
 		}
-		if err := utils.CheckQueueNameInPod(task.pod); err != nil {
+		if err := utils.CheckQueueNameInPod(task.pod); err != nil { //检查队列相关元数据
 			log.Log(log.ShimCacheTask).Warn("Pod has inconsistent queue metadata and may be rejected in a future YuniKorn release",
 				zap.String("appID", task.applicationID),
 				zap.String("podName", task.pod.Name),
@@ -564,6 +568,7 @@ func (task *Task) sanityCheckBeforeScheduling() error {
 				nil, v1.EventTypeWarning, "Scheduling", "Scheduling", fmt.Sprintf("Pod has inconsistent queue metadata and may be rejected in a future YuniKorn release: %s", err.Error()))
 		}
 	}
+	//PVC 资源的检查
 	return task.checkPodPVCs()
 }
 

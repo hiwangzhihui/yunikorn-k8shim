@@ -93,7 +93,7 @@ func CreateAllocationRequestForTask(appID, taskID string, resource *si.Resource,
 
 func CreateAllocationForTask(appID, taskID, nodeID string, resource *si.Resource, placeholder bool, taskGroupName string, pod *v1.Pod, originator bool, preemptionPolicy *si.PreemptionPolicy) *si.AllocationRequest {
 	allocation := si.Allocation{
-		AllocationKey:    taskID,
+		AllocationKey:    taskID, // pod-uuid
 		AllocationTags:   CreateTagsForTask(pod),
 		ResourcePerAlloc: resource,
 		Priority:         CreatePriorityForTask(pod),

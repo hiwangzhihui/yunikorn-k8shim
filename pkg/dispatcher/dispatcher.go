@@ -16,6 +16,9 @@
  limitations under the License.
 */
 
+/**
+* Shime 层级的事件转发器
+ */
 package dispatcher
 
 import (
@@ -52,6 +55,7 @@ var (
 
 // central dispatcher that dispatches scheduling events.
 type Dispatcher struct {
+	//事件通道，默认事件通道长度为 1024 * 1024
 	eventChan chan events.SchedulingEvent
 	stopChan  chan struct{}
 	handlers  map[EventType]map[string]func(interface{})
@@ -61,6 +65,7 @@ type Dispatcher struct {
 }
 
 func initDispatcher() {
+	//TODO 暴露参数提供调整
 	eventChannelCapacity := conf.GetSchedulerConf().EventChannelCapacity
 	dispatcher = &Dispatcher{
 		eventChan: make(chan events.SchedulingEvent, eventChannelCapacity),
@@ -79,6 +84,9 @@ func initDispatcher() {
 		zap.Float64("DispatchTimeoutInSeconds", DispatchTimeout.Seconds()))
 }
 
+/**
+* eventType 分为三类：App、Task、Node 三类事件
+ */
 func RegisterEventHandler(handlerID string, eventType EventType, handlerFn func(interface{})) {
 	eventDispatcher := getDispatcher()
 	eventDispatcher.lock.Lock()
@@ -139,6 +147,7 @@ func getDispatcher() *Dispatcher {
 func Dispatch(event events.SchedulingEvent) {
 	// currently if dispatch fails, we simply log the error
 	// we may revisit this later, e.g add retry here
+	//异步派发事件
 	if err := getDispatcher().dispatch(event); err != nil {
 		log.Log(log.ShimDispatcher).Warn("failed to dispatch SchedulingEvent",
 			zap.Error(err))
@@ -215,6 +224,7 @@ func Start() {
 	getDispatcher().stopChan = make(chan struct{})
 	getDispatcher().stopped.Add(1)
 	go func() {
+		//开始监听通道，处理事件
 		for {
 			select {
 			case event := <-getDispatcher().eventChan:
@@ -224,6 +234,7 @@ func Start() {
 				case events.ApplicationEvent:
 					getEventHandler(EventTypeApp)(v)
 				case events.SchedulerNodeEvent:
+					//返回一个匿名函数，处理 V 事件
 					getEventHandler(EventTypeNode)(v)
 				default:
 					log.Log(log.ShimDispatcher).Fatal("unsupported event",

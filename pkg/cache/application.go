@@ -79,7 +79,7 @@ func NewApplication(appID, queueName, user string, groups []string, tags map[str
 		groups:                  groups,
 		taskMap:                 taskMap,
 		tags:                    tags,
-		sm:                      newAppState(),
+		sm:                      newAppState(), //状态初始化，开始进行流转
 		taskGroups:              make([]TaskGroup, 0),
 		lock:                    &locking.RWMutex{},
 		schedulerAPI:            scheduler,
@@ -101,6 +101,7 @@ func (app *Application) handle(ev events.ApplicationEvent) error {
 	//    because the lock is already held here.
 	app.lock.Lock()
 	defer app.lock.Unlock()
+	//进行状态转换
 	err := app.sm.Event(context.Background(), ev.GetEvent(), app, ev.GetArgs())
 	// handle the same state transition not nil error (limit of fsm).
 	if err != nil && err.Error() != transitionErr {
@@ -370,9 +371,11 @@ func (app *Application) Schedule() bool {
 	case ApplicationStates().Running:
 		// during the Running state, only the regular pods
 		// can be scheduled
+		//进入任务资源调度
 		app.scheduleTasks(func(t *Task) bool {
 			return !t.placeholder
 		})
+		//如果任务 Pod 运行结束则对应的 Task 也结束移除
 		app.removeCompletedTasks()
 		if len(app.GetNewTasks()) == 0 {
 			return false
@@ -394,6 +397,7 @@ func (app *Application) scheduleTasks(taskScheduleCondition func(t *Task) bool) 
 			if err := task.sanityCheckBeforeScheduling(); err == nil {
 				// note, if we directly trigger submit task event, it may spawn too many duplicate
 				// events, because a task might be submitted multiple times before its state transits to PENDING.
+				//上述检查没有问题，先进入 InitTask 状态
 				if handleErr := task.handle(
 					NewSimpleTaskEvent(task.applicationID, task.taskID, InitTask)); handleErr != nil {
 					// something goes wrong when transit task to PENDING state,
@@ -416,7 +420,7 @@ func (app *Application) handleSubmitApplicationEvent() error {
 	log.Log(log.ShimCacheApplication).Info("handle app submission",
 		zap.Stringer("app", app),
 		zap.String("clusterID", conf.GetSchedulerConf().ClusterID))
-	//向 Core 核心发送请求
+	// schedulerAPI 向 Core 核心发送请求，进入内核调度
 	if err := app.schedulerAPI.UpdateApplication(
 		&si.ApplicationRequest{
 			New: []*si.AddApplicationRequest{

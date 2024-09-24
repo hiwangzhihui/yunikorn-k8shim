@@ -388,10 +388,12 @@ func callbacks(states *TStates) fsm.Callbacks {
 		},
 		states.Pending: func(_ context.Context, event *fsm.Event) {
 			task := event.Args[0].(*Task) //nolint:errcheck
+			//转为 Pending 状态后触发该函数
 			task.postTaskPending()
 		},
 		states.Allocated: func(_ context.Context, event *fsm.Event) {
 			task := event.Args[0].(*Task) //nolint:errcheck
+			//新 NewBindTaskEvent ，KubeClient.Bind 启动 Pod ，事件转发到 Bound
 			task.postTaskAllocated()
 		},
 		states.Rejected: func(_ context.Context, event *fsm.Event) {
@@ -427,6 +429,7 @@ func callbacks(states *TStates) fsm.Callbacks {
 			}
 			allocationKey := eventArgs[0]
 			nodeID := eventArgs[1]
+			//更新 Task 信息，并检查 Task 状态
 			task.beforeTaskAllocated(event.Src, allocationKey, nodeID)
 		},
 		beforeHook(CompleteTask): func(_ context.Context, event *fsm.Event) {
@@ -435,6 +438,7 @@ func callbacks(states *TStates) fsm.Callbacks {
 		},
 		SubmitTask.String(): func(_ context.Context, event *fsm.Event) {
 			task := event.Args[0].(*Task) //nolint:errcheck
+			//触发提交后，开始进行资源申请
 			task.handleSubmitTaskEvent()
 		},
 	}
