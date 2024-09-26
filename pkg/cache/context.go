@@ -607,11 +607,13 @@ func (ctx *Context) triggerReloadConfig(index int, configMap *v1.ConfigMap) {
 		return
 	}
 	// update the maps in the context: return on failure, logged in the called method
+	// TODO 直接更新了，没有检查
 	confMap := ctx.setConfigMap(index, configMap)
 	if confMap == nil {
 		return
 	}
 	log.Log(log.ShimContext).Info("reloading scheduler configuration")
+	//检查应该放在这 TODO
 	config := utils.GetCoreSchedulerConfigFromConfigMap(confMap)
 	extraConfig := utils.GetExtraConfigFromConfigMap(confMap)
 

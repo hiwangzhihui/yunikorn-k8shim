@@ -71,12 +71,13 @@ type APIProvider interface {
 
 // resource handlers defines add/update/delete operations in response to the corresponding resources updates.
 // The associated the type field points the handler functions to the correct receiver.
+// Yunikorn 自定义的复合事件处理器
 type ResourceEventHandlers struct {
-	Type
-	FilterFn func(obj interface{}) bool
-	AddFn    func(obj interface{})
-	UpdateFn func(old, new interface{})
-	DeleteFn func(obj interface{})
+	Type                                //监控的资源类型
+	FilterFn func(obj interface{}) bool //事件发生触发的，过滤函数
+	AddFn    func(obj interface{})      //add 事件发触发函数
+	UpdateFn func(old, new interface{}) // update 事件发触发函数
+	DeleteFn func(obj interface{})      //delete 事件发触发函数
 }
 
 // API factory maintains shared clients which can be used to access other external components
