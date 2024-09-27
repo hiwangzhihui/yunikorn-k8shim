@@ -92,7 +92,7 @@ func newShimSchedulerInternal(ctx *cache.Context, apiFactory client.APIProvider,
 		lock:                 &locking.RWMutex{},
 		outstandingAppsFound: false,
 	}
-	// init dispatcher 初始化事件转发器，没有 NoderHandler ?
+	// init dispatcher 初始化事件转发器，
 	dispatcher.RegisterEventHandler(AppHandler, dispatcher.EventTypeApp, ctx.ApplicationEventHandler())
 	dispatcher.RegisterEventHandler(TaskHandler, dispatcher.EventTypeTask, ctx.TaskEventHandler())
 

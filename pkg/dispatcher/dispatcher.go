@@ -17,7 +17,7 @@
 */
 
 /**
-* Shime 层级的事件转发器
+* Shim 层级的事件转发器
  */
 package dispatcher
 
@@ -58,10 +58,12 @@ type Dispatcher struct {
 	//事件通道，默认事件通道长度为 1024 * 1024
 	eventChan chan events.SchedulingEvent
 	stopChan  chan struct{}
-	handlers  map[EventType]map[string]func(interface{})
-	running   atomic.Value
-	lock      locking.RWMutex
-	stopped   sync.WaitGroup
+	//handler 注册表
+	// Map<EventType,Map<handlerID,handlerFunc>>
+	handlers map[EventType]map[string]func(interface{})
+	running  atomic.Value
+	lock     locking.RWMutex
+	stopped  sync.WaitGroup
 }
 
 func initDispatcher() {
@@ -126,6 +128,8 @@ func getEventHandler(eventType EventType) func(interface{}) {
 	for _, handler := range eventDispatcher.handlers[eventType] {
 		handlers = append(handlers, handler)
 	}
+	//所有的 Handler 都会将该事件处理一次
+	// TODO EventTypeNode 在这个场景存在 BUG
 	return func(event interface{}) {
 		for _, handler := range handlers {
 			handler(event)
@@ -170,7 +174,7 @@ func (p *Dispatcher) dispatch(event events.SchedulingEvent) error {
 	case p.eventChan <- event:
 		return nil
 	default:
-		p.asyncDispatch(event)
+		p.asyncDispatch(event) //eventChan 事件通道满了后才会调用该逻辑
 		return nil
 	}
 }

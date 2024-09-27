@@ -1229,6 +1229,7 @@ func (ctx *Context) HandleContainerStateUpdate(request *si.UpdateContainerSchedu
 	}
 }
 
+// TODO 为什么这么写，不好理解，应该规范接口
 func (ctx *Context) ApplicationEventHandler() func(obj interface{}) {
 	return func(obj interface{}) {
 		if event, ok := obj.(events.ApplicationEvent); ok {
@@ -1514,6 +1515,7 @@ func (ctx *Context) registerNodes(nodes []*v1.Node) ([]*v1.Node, error) {
 
 	// register with the dispatcher so that we can track our response
 	handlerID := fmt.Sprintf("%s-%d", registerNodeContextHandler, ctx.txnID.Add(1))
+	//TODO EventTypeNode 在处理逻辑上存在 Bug 待验证
 	dispatcher.RegisterEventHandler(handlerID, dispatcher.EventTypeNode, func(event interface{}) {
 		nodeEvent, ok := event.(CachedSchedulerNodeEvent)
 		if !ok {

@@ -62,7 +62,7 @@ func (callback *AsyncRMCallback) UpdateAllocation(response *si.AllocationRespons
 		}
 
 		task.setAllocationKey(alloc.AllocationKey) //更新申请到的 key
-		//todo
+		//todo 放在这不太合理
 		if err := callback.context.AssumePod(alloc.AllocationKey, alloc.NodeID); err != nil {
 			task.FailWithEvent(err.Error(), "AssumePodError")
 			return err
@@ -86,7 +86,7 @@ func (callback *AsyncRMCallback) UpdateAllocation(response *si.AllocationRespons
 			fmt.Sprintf("task %s allocation from application %s is rejected by scheduler",
 				reject.AllocationKey, reject.ApplicationID)))
 	}
-
+	//处理 Core 释放的资源
 	for _, release := range response.Released {
 		log.Log(log.ShimRMCallback).Debug("callback: response to released allocations",
 			zap.String("AllocationKey", release.AllocationKey))
