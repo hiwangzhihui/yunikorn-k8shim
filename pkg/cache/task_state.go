@@ -429,7 +429,7 @@ func callbacks(states *TStates) fsm.Callbacks {
 			}
 			allocationKey := eventArgs[0]
 			nodeID := eventArgs[1]
-			//更新 Task 信息，并检查 Task 状态
+			//更新 Task 信息，并检查 Task 状态，TODO 如果控制得好，这个检查似乎多余
 			task.beforeTaskAllocated(event.Src, allocationKey, nodeID)
 		},
 		beforeHook(CompleteTask): func(_ context.Context, event *fsm.Event) {

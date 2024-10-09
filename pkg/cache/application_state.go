@@ -38,6 +38,7 @@ var applicationStatesOnce sync.Once
 type ApplicationEventType int
 
 const (
+	//事件
 	SubmitApplication ApplicationEventType = iota
 	AcceptApplication
 	TryReserve
@@ -507,6 +508,7 @@ func newAppState() *fsm.FSM { //nolint:funlen
 				terminationType := eventArgs[1]
 				app.handleReleaseAppAllocationEvent(taskID, terminationType)
 			},
+			// 监控 Resuming 状态的 Task 都释放完,就会触发 RunApplication 事件将当前 App 状态转换为 Runing
 			AppTaskCompleted.String(): func(_ context.Context, event *fsm.Event) {
 				app := event.Args[0].(*Application) //nolint:errcheck
 				app.handleAppTaskCompletedEvent()

@@ -67,7 +67,7 @@ type Dispatcher struct {
 }
 
 func initDispatcher() {
-	//TODO 暴露参数提供调整
+	//TODO 暴露参数提供调整 ,默认 1024 * 1024
 	eventChannelCapacity := conf.GetSchedulerConf().EventChannelCapacity
 	dispatcher = &Dispatcher{
 		eventChan: make(chan events.SchedulingEvent, eventChannelCapacity),
@@ -77,7 +77,9 @@ func initDispatcher() {
 		lock:      locking.RWMutex{},
 	}
 	dispatcher.setRunning(false)
+	//默认超时时间 300s
 	DispatchTimeout = conf.GetSchedulerConf().DispatchTimeout
+	//处理异步处理线程最大个数，默认值 104857
 	AsyncDispatchLimit = max(10000, int32(eventChannelCapacity/10))
 
 	log.Log(log.ShimDispatcher).Info("Init dispatcher",
@@ -180,21 +182,24 @@ func (p *Dispatcher) dispatch(event events.SchedulingEvent) error {
 }
 
 // async-dispatch try to enqueue the event in every 3 seconds util timeout,
-// it's only called when event channel is full.
+//
+// it's only called when event channel is full.  当事件队列满了的时候才会调用该方法
 func (p *Dispatcher) asyncDispatch(event events.SchedulingEvent) {
 	count := asyncDispatchCount.Add(1)
 	log.Log(log.ShimDispatcher).Warn("event channel is full, transition to async-dispatch mode",
 		zap.Int32("asyncDispatchCount", count))
-	if count > AsyncDispatchLimit {
+	if count > AsyncDispatchLimit { //如果，队列的事件超过该数值，抛出异常停止程序
 		panic(fmt.Errorf("dispatcher exceeds async-dispatch limit"))
 	}
+	//TODO 这种方式破坏了事件的顺序性
+	// 默认3s 重试一下，重试 300s
 	go func(beginTime time.Time, stop chan struct{}) {
 		defer asyncDispatchCount.Add(-1)
 		for p.isRunning() {
 			select {
 			case <-stop:
 				return
-			case p.eventChan <- event:
+			case p.eventChan <- event: //再尝试将当前事件放队列通道里存放
 				return
 			case <-time.After(AsyncDispatchCheckInterval):
 				elapseTime := time.Since(beginTime)

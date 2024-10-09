@@ -176,7 +176,7 @@ func (s *APIFactory) AddEventHandler(handlers *ResourceEventHandlers) error {
 	}
 
 	// if filter function exists
-	// add a wrapper
+	// add a wrapper， 如果存在 FilterFn 则包装为 FilteringResourceEventHandler
 	if handlers.FilterFn != nil {
 		h = cache.FilteringResourceEventHandler{
 			FilterFunc: handlers.FilterFn,
