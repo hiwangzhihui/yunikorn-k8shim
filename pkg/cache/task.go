@@ -47,8 +47,8 @@ type Task struct {
 	podStatus     v1.PodStatus // pod status, maintained separately for efficiency reasons
 	context       *Context
 	createTime    time.Time
-	placeholder   bool
-	originator    bool
+	placeholder   bool //是否为预占类型的 Task
+	originator    bool //是否为原类型的 Task
 	sm            *fsm.FSM
 
 	// mutable resources, require locking
@@ -531,7 +531,7 @@ func (task *Task) releaseAllocation() {
 			task.application.partition,
 			task.terminationType,
 		)
-
+		//资源释放扣减到 Core
 		if releaseRequest.Releases != nil {
 			log.Log(log.ShimCacheTask).Info("releasing allocations",
 				zap.Int("numOfAllocationsToRelease", len(releaseRequest.Releases.AllocationsToRelease)))

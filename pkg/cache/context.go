@@ -886,6 +886,7 @@ func (ctx *Context) notifyTaskComplete(app *Application, taskID string) {
 	log.Log(log.ShimContext).Debug("release allocation in notifyTaskComplete",
 		zap.String("appID", app.applicationID),
 		zap.String("taskID", taskID))
+	//task 资源释放，对于PH Task 可能会触发替换
 	ev := NewSimpleTaskEvent(app.applicationID, taskID, CompleteTask)
 	dispatcher.Dispatch(ev)
 	if app.GetApplicationState() == ApplicationStates().Resuming {
@@ -976,7 +977,7 @@ func (ctx *Context) AddApplication(request *AddApplicationRequest) *Application 
 		request.Metadata.Groups,
 		request.Metadata.Tags,
 		ctx.apiProvider.GetAPIs().SchedulerAPI)
-	app.setTaskGroups(request.Metadata.TaskGroups)
+	app.setTaskGroups(request.Metadata.TaskGroups) //todo 没有去重
 	app.setTaskGroupsDefinition(request.Metadata.Tags[constants.AnnotationTaskGroups])
 	app.setSchedulingParamsDefinition(request.Metadata.Tags[constants.AnnotationSchedulingPolicyParam])
 	if request.Metadata.CreationTime != 0 {
@@ -1038,6 +1039,7 @@ func (ctx *Context) AddTask(request *AddTaskRequest) *Task {
 }
 
 func (ctx *Context) addTask(request *AddTaskRequest) *Task {
+	//TODO 预占信息有没有在提交任务时打印
 	log.Log(log.ShimContext).Debug("AddTask",
 		zap.String("appID", request.Metadata.ApplicationID),
 		zap.String("taskID", request.Metadata.TaskID))
@@ -1070,7 +1072,7 @@ func (ctx *Context) addTask(request *AddTaskRequest) *Task {
 					log.Log(log.ShimContext).Error("Inconsistent state - found another originator task for an application",
 						zap.String("taskId", task.GetTaskID()))
 				}
-				app.setOriginatingTask(task)
+				app.setOriginatingTask(task) //由哪个 Task 触发创建的 App
 				log.Log(log.ShimContext).Info("app request originating pod added",
 					zap.String("appID", app.applicationID),
 					zap.String("original task", task.GetTaskID()))

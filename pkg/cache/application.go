@@ -46,7 +46,7 @@ type Application struct {
 	partition                  string
 	user                       string
 	groups                     []string
-	taskMap                    map[string]*Task
+	taskMap                    map[string]*Task //任务列表
 	tags                       map[string]string
 	taskGroups                 []TaskGroup
 	taskGroupsDefinition       string
@@ -58,7 +58,7 @@ type Application struct {
 	placeholderAsk             *si.Resource // total placeholder request for the app (all task groups)
 	placeholderTimeoutInSec    int64
 	schedulingStyle            string
-	originatingTask            *Task // Original Pod which creates the requests
+	originatingTask            *Task // Original Pod which creates the requests 第一个触发创建 App 的Task
 }
 
 const transitionErr = "no transition"
@@ -507,6 +507,7 @@ func (app *Application) onResuming() {
 // onReserving triggered when entering the reserving state.
 // During normal operation this creates all the placeholders. During recovery this call could cause the application
 // in the shim and core to progress to the next state.
+// 为 Gang 调度任务触发创建，资源预留 Task
 func (app *Application) onReserving() {
 	// if any placeholder already exist during recovery we might need to send
 	// an event to trigger Application state change in the core
@@ -520,8 +521,10 @@ func (app *Application) onReserving() {
 	}
 
 	go func() {
-		// while doing reserving
+		// while doing reserving  首次为 App 创建 所有的PhTask
 		if err := getPlaceholderManager().createAppPlaceholders(app); err != nil {
+			//如果创建资源预占失败，直接转换为 Normal 模式，状态转换到 Runing
+			// Hard 模式，直接失败即可 TODO
 			// creating placeholder failed
 			// put the app into recycling queue and turn the app to running state
 			getPlaceholderManager().cleanUp(app)
@@ -563,6 +566,7 @@ func (app *Application) onReservationStateChange() {
 	}
 
 	// if any count is larger than 0 we need to wait for more placeholders
+	//资源预占完成，则发起 RunApplication 事件转换状态机
 	for _, needed := range desireCounts {
 		if needed > 0 {
 			return
@@ -640,7 +644,7 @@ func (app *Application) handleReleaseAppAllocationEvent(taskID string, terminati
 
 	if task, ok := app.taskMap[taskID]; ok {
 		task.setTaskTerminationType(terminationType)
-		err := task.DeleteTaskPod()
+		err := task.DeleteTaskPod() //删除 phPod
 		if err != nil {
 			log.Log(log.ShimCacheApplication).Error("failed to release allocation from application", zap.Error(err))
 		}

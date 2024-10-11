@@ -77,12 +77,14 @@ func (mgr *PlaceholderManager) createAppPlaceholders(app *Application) error {
 	defer mgr.Unlock()
 
 	// map task group to count of already created placeholders
+	//统计每个 TaskGroup 创建PhTask 个数 todo 待优化，从两个不同的地方获取 group 信息
 	tgCounts := make(map[string]int32)
 	for _, ph := range app.getPlaceHolderTasks() {
 		tgCounts[ph.GetTaskGroupName()]++
 	}
 
 	// iterate all task groups, create placeholders for all the min members
+	//为 TaskGroup 创建 PhTask
 	for _, tg := range app.getTaskGroups() {
 		count := tgCounts[tg.Name]
 		// only create missing pods for each task group

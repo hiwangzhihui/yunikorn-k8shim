@@ -506,6 +506,7 @@ func newAppState() *fsm.FSM { //nolint:funlen
 				}
 				taskID := eventArgs[0]
 				terminationType := eventArgs[1]
+				//触发替换
 				app.handleReleaseAppAllocationEvent(taskID, terminationType)
 			},
 			// 监控 Resuming 状态的 Task 都释放完,就会触发 RunApplication 事件将当前 App 状态转换为 Runing
