@@ -38,7 +38,7 @@ type PlaceholderManager struct {
 	// when the placeholder manager is unable to delete a pod,
 	// this pod becomes to be an "orphan" pod. We add them to a map
 	// and keep retrying deleting them in order to avoid wasting resources.
-	orphanPods  map[string]*v1.Pod
+	orphanPods  map[string]*v1.Pod //当预占 Pod 无法删除时会加入该列表，PlaceholderManager中会启动一个线程 5s 会定时清理这些 Pod
 	stopChan    chan struct{}
 	running     atomic.Value
 	cleanupTime time.Duration
@@ -77,7 +77,7 @@ func (mgr *PlaceholderManager) createAppPlaceholders(app *Application) error {
 	defer mgr.Unlock()
 
 	// map task group to count of already created placeholders
-	//统计每个 TaskGroup 创建PhTask 个数 todo 待优化，从两个不同的地方获取 group 信息
+	//先统计每个 TaskGroup 已经创建PhTask 个数 、
 	tgCounts := make(map[string]int32)
 	for _, ph := range app.getPlaceHolderTasks() {
 		tgCounts[ph.GetTaskGroupName()]++
@@ -91,7 +91,7 @@ func (mgr *PlaceholderManager) createAppPlaceholders(app *Application) error {
 		for i := count; i < tg.MinMember; i++ {
 			placeholderName := GeneratePlaceholderName(tg.Name, app.GetApplicationID())
 			placeholder := newPlaceholder(placeholderName, app, tg)
-			// create the placeholder on K8s
+			// create the placeholder on K8s  创建对应的PendingPod
 			_, err := mgr.clients.KubeClient.Create(placeholder.pod)
 			if err != nil {
 				log.Log(log.ShimCachePlaceholder).Error("failed to create placeholder pod",

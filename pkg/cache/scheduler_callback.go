@@ -62,7 +62,7 @@ func (callback *AsyncRMCallback) UpdateAllocation(response *si.AllocationRespons
 		}
 
 		task.setAllocationKey(alloc.AllocationKey) //更新申请到的 key
-		//todo 放在这不太合理
+		//todo 这个逻辑是干什么的？看起来是一些检查，Assume进行预期检查
 		if err := callback.context.AssumePod(alloc.AllocationKey, alloc.NodeID); err != nil {
 			task.FailWithEvent(err.Error(), "AssumePodError")
 			return err

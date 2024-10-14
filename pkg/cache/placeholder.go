@@ -46,6 +46,13 @@ type Placeholder struct {
 	pod           *v1.Pod
 }
 
+/**
+* Placeholder pod 的信息
+* placeholderName ：pod 的名称
+* app 的基础信息
+* pod 所属的 taskGroup
+* pod 的资源需求信息
+ */
 func newPlaceholder(placeholderName string, app *Application, taskGroup TaskGroup) *Placeholder {
 	// Here the owner reference is always the originator pod
 	ownerRefs := app.getPlaceholderOwnerReferences()
@@ -83,7 +90,7 @@ func newPlaceholder(placeholderName string, app *Application, taskGroup TaskGrou
 		priorityClassName = task.GetTaskPod().Spec.PriorityClassName
 	}
 
-	// prepare the resource lists
+	// prepare the resource lists  Pod  的需求信息
 	requests := GetPlaceholderResourceRequests(taskGroup.MinResource)
 	var zeroSeconds int64 = 0
 	placeholderPod := &v1.Pod{
@@ -91,14 +98,14 @@ func newPlaceholder(placeholderName string, app *Application, taskGroup TaskGrou
 			Name:      placeholderName,
 			Namespace: app.tags[constants.AppTagNamespace],
 			Labels: utils.MergeMaps(taskGroup.Labels, map[string]string{
-				constants.CanonicalLabelApplicationID: app.GetApplicationID(),
-				constants.CanonicalLabelQueueName:     app.GetQueue(),
+				constants.CanonicalLabelApplicationID: app.GetApplicationID(), //pod 所属的 App
+				constants.CanonicalLabelQueueName:     app.GetQueue(),         // pod 所属的队列
 			}),
 			Annotations:     annotations,
 			OwnerReferences: ownerRefs,
 		},
 		Spec: v1.PodSpec{
-			SecurityContext: &v1.PodSecurityContext{
+			SecurityContext: &v1.PodSecurityContext{ //pod 的用户和组信息
 				RunAsUser:  &runAsUser,
 				RunAsGroup: &runAsGroup,
 			},
@@ -106,7 +113,7 @@ func newPlaceholder(placeholderName string, app *Application, taskGroup TaskGrou
 			Containers: []v1.Container{
 				{
 					Name:            constants.PlaceholderContainerName,
-					Image:           conf.GetSchedulerConf().PlaceHolderImage,
+					Image:           conf.GetSchedulerConf().PlaceHolderImage, //预占的 Image 信息，使用一个轻量级的 registry.k8s.io/pause:3.7  镜像进行预占
 					ImagePullPolicy: v1.PullIfNotPresent,
 					Resources: v1.ResourceRequirements{
 						Requests: requests,

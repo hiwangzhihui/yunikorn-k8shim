@@ -48,17 +48,17 @@ type Application struct {
 	groups                     []string
 	taskMap                    map[string]*Task //任务列表
 	tags                       map[string]string
-	taskGroups                 []TaskGroup
-	taskGroupsDefinition       string
-	schedulingParamsDefinition string
+	taskGroups                 []TaskGroup // Gang 调度分组列表
+	taskGroupsDefinition       string      //Gang 调度所有分组的注解信息
+	schedulingParamsDefinition string      //Gang 调度的参数
 	placeholderOwnerReferences []metav1.OwnerReference
 	sm                         *fsm.FSM
 	lock                       *locking.RWMutex
 	schedulerAPI               api.SchedulerAPI
-	placeholderAsk             *si.Resource // total placeholder request for the app (all task groups)
-	placeholderTimeoutInSec    int64
-	schedulingStyle            string
-	originatingTask            *Task // Original Pod which creates the requests 第一个触发创建 App 的Task
+	placeholderAsk             *si.Resource // total placeholder request for the app (all task groups)  所有 Gang 调度资源预占请求
+	placeholderTimeoutInSec    int64        //gang 调度超时时间
+	schedulingStyle            string       //gang 调度模式
+	originatingTask            *Task        // Original Pod which creates the requests 第一个触发创建 App 的Task
 }
 
 const transitionErr = "no transition"
@@ -361,6 +361,7 @@ func (app *Application) Schedule() bool {
 	case ApplicationStates().Reserving:
 		// during the Reserving state, only the placeholders
 		// can be scheduled
+		//驱动预占的placeholderTask进行资源调度
 		app.scheduleTasks(func(t *Task) bool {
 			return t.placeholder
 		})
@@ -507,7 +508,7 @@ func (app *Application) onResuming() {
 // onReserving triggered when entering the reserving state.
 // During normal operation this creates all the placeholders. During recovery this call could cause the application
 // in the shim and core to progress to the next state.
-// 为 Gang 调度任务触发创建，资源预留 Task
+// 为 Gang 调度任务触发创建资源预留 Task
 func (app *Application) onReserving() {
 	// if any placeholder already exist during recovery we might need to send
 	// an event to trigger Application state change in the core
@@ -643,8 +644,8 @@ func (app *Application) handleReleaseAppAllocationEvent(taskID string, terminati
 		zap.String("terminationType", terminationType))
 
 	if task, ok := app.taskMap[taskID]; ok {
-		task.setTaskTerminationType(terminationType)
-		err := task.DeleteTaskPod() //删除 phPod
+		task.setTaskTerminationType(terminationType) //更新 Task 终止类型
+		err := task.DeleteTaskPod()                  //删除 phPod
 		if err != nil {
 			log.Log(log.ShimCacheApplication).Error("failed to release allocation from application", zap.Error(err))
 		}

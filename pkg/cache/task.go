@@ -40,7 +40,7 @@ import (
 )
 
 type Task struct {
-	taskID        string
+	taskID        string //pod.UUID
 	alias         string
 	applicationID string
 	application   *Application
@@ -48,13 +48,14 @@ type Task struct {
 	context       *Context
 	createTime    time.Time
 	placeholder   bool //是否为预占类型的 Task
-	originator    bool //是否为原类型的 Task
-	sm            *fsm.FSM
+	originator    bool //是否为 App 的第一 Pod 的 Task
+
+	sm *fsm.FSM
 
 	// mutable resources, require locking
-	allocationKey   string
-	nodeName        string
-	taskGroupName   string
+	allocationKey   string //默认 PodUUId
+	nodeName        string //分配到的节点 NodeId
+	taskGroupName   string //Gang 调度分组
 	terminationType string
 	schedulingState TaskSchedulingState
 	resource        *si.Resource
@@ -319,7 +320,7 @@ func (task *Task) updateAllocation() {
 	// submit allocation
 	rr := common.CreateAllocationForTask(
 		task.applicationID,
-		task.taskID,
+		task.taskID, // == AllocationKey
 		task.pod.Spec.NodeName,
 		task.resource,
 		task.placeholder,
@@ -488,6 +489,7 @@ func (task *Task) postTaskFailed(reason string) {
 // this is done as a before hook because the releaseAllocation() call needs to
 // send different requests to scheduler-core, depending on current task state
 func (task *Task) beforeTaskCompleted() {
+	//pod 释放完成后通知 Core
 	task.releaseAllocation()
 
 	events.GetRecorder().Eventf(task.pod.DeepCopy(), nil,

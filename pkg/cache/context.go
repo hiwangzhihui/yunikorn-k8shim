@@ -977,16 +977,19 @@ func (ctx *Context) AddApplication(request *AddApplicationRequest) *Application 
 		request.Metadata.Groups,
 		request.Metadata.Tags,
 		ctx.apiProvider.GetAPIs().SchedulerAPI)
+	//为 app 设置 Gang 调度的 Task  group 信息
 	app.setTaskGroups(request.Metadata.TaskGroups) //todo 没有去重
 	app.setTaskGroupsDefinition(request.Metadata.Tags[constants.AnnotationTaskGroups])
 	app.setSchedulingParamsDefinition(request.Metadata.Tags[constants.AnnotationSchedulingPolicyParam])
 	if request.Metadata.CreationTime != 0 {
 		app.tags[siCommon.DomainYuniKorn+siCommon.CreationTime] = strconv.FormatInt(request.Metadata.CreationTime, 10)
 	}
+	//读取 Gang 调度的参数信息
 	if request.Metadata.SchedulingPolicyParameters != nil {
 		app.SetPlaceholderTimeout(request.Metadata.SchedulingPolicyParameters.GetPlaceholderTimeout())
 		app.setSchedulingStyle(request.Metadata.SchedulingPolicyParameters.GetGangSchedulingStyle())
 	}
+	//设置最先到的这个 Pod 信息为主资源
 	app.setPlaceholderOwnerReferences(request.Metadata.OwnerReferences)
 
 	// add into cache
