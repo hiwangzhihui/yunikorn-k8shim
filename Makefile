@@ -387,14 +387,7 @@ $(DEV_BIN_DIR)/$(PLUGIN_BINARY): go.mod go.sum $(shell find pkg)
 
 # Build scheduler binary in a production ready version
 .PHONY: scheduler
-#scheduler: $(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY)
-scheduler: init
-	@echo "building binary for scheduler docker image"
-	CGO_ENABLED=0 GOOS=linux GOARCH="${EXEC_ARCH}" \
-	go build -gcflags="-N -l" -a -o=${RELEASE_BIN_DIR}/${BINARY} -ldflags \
-	'-extldflags "-static" -X main.version=${VERSION} -X main.date=${DATE} -X main.goVersion=${GO_VERSION} -X main.arch=${EXEC_ARCH} -X main.coreSHA=${CORE_SHA} -X main.siSHA=${SI_SHA} -X main.shimSHA=${SHIM_SHA}' \
-	-tags netgo -installsuffix netgo \
-	./pkg/cmd/shim/
+scheduler: $(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY)
 
 $(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY): go.mod go.sum $(shell find pkg)
 	@echo "building binary for scheduler docker image"
@@ -403,6 +396,7 @@ $(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY): go.mod go.sum $(shell find pkg)
 	-a \
 	-o=${RELEASE_BIN_DIR}/${SCHEDULER_BINARY} \
 	-trimpath \
+	-gcflags="-N -l" \
 	-ldflags '-buildid= -extldflags "-static" -X ${FLAG_PREFIX}.buildVersion=${VERSION} -X ${FLAG_PREFIX}.buildDate=${DATE} -X ${FLAG_PREFIX}.isPluginVersion=false -X ${FLAG_PREFIX}.goVersion=${GO_VERSION} -X ${FLAG_PREFIX}.arch=${EXEC_ARCH} -X ${FLAG_PREFIX}.coreSHA=${CORE_SHA} -X ${FLAG_PREFIX}.siSHA=${SI_SHA} -X ${FLAG_PREFIX}.shimSHA=${SHIM_SHA}' \
 	-tags netgo \
 	-installsuffix netgo \
@@ -431,6 +425,7 @@ sched_image: $(OUTPUT)/third-party-licenses.md scheduler docker/scheduler
 	@rm -rf "$(DOCKER_DIR)/scheduler"
 	@mkdir -p "$(DOCKER_DIR)/scheduler"
 	@cp -a "docker/scheduler/." "$(DOCKER_DIR)/scheduler/."
+	@cp -a "./dlv" "$(DOCKER_DIR)/scheduler/."
 	@cp "$(RELEASE_BIN_DIR)/$(SCHEDULER_BINARY)" "$(DOCKER_DIR)/scheduler/."
 	@cp -a LICENSE NOTICE "$(OUTPUT)/third-party-licenses.md" "$(DOCKER_DIR)/scheduler/."
 	DOCKER_BUILDKIT=1 docker build \
